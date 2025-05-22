@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Книжная полка</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    body {
+      padding-top: 56px;
+      background-color: #f8f9fa;
+    }
+    .book-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background-color: white;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .book-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .book-cover {
+      width: 90px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6c757d;
+      background-color: white;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .empty-state i {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      color: #e9ecef;
+    }
+    .form-card {
+      border-radius: 8px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .tips-card {
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .search-results {
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .badge-custom {
+      font-weight: normal;
+      padding: 5px 8px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="/books">
+      <i class="fas fa-book-open mr-2"></i>Книжная полка
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <a class="nav-link" href="/books">Главная</a>
+        </li>
+      </ul>
+      <form class="form-inline my-2 my-lg-0" th:action="@{/books/search}" method="get">
+        <div class="input-group">
+          <input class="form-control" type="text" placeholder="Поиск книг" name="query">
+          <div class="input-group-append">
+            <button class="btn btn-outline-light" type="submit">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</nav>
+
+<main class="container py-4">
+  <div class="row">
+    <div class="col-lg-8">
+      <!-- Форма добавления книги -->
+      <div class="card form-card">
+        <div class="card-header bg-white border-bottom-0 pb-0">
+          <h5 class="mb-3"><i class="fas fa-plus-circle text-primary mr-2"></i>Добавить новую книгу</h5>
+        </div>
+        <div class="card-body pt-0">
+          <form th:action="@{/books/add}" method="post">
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="title">Название</label>
+                <input type="text" class="form-control" id="title" name="title" required>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="author">Автор</label>
+                <input type="text" class="form-control" id="author" name="author" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label for="isbn">ISBN</label>
+                <input type="text" class="form-control" id="isbn" name="isbn" placeholder="Необязательно">
+              </div>
+              <div class="form-group col-md-4">
+                <label for="pageCount">Страниц</label>
+                <input type="number" class="form-control" id="pageCount" name="pageCount" placeholder="Необязательно">
+              </div>
+              <div class="form-group col-md-4">
+                <label for="coverImageUrl">URL обложки</label>
+                <input type="text" class="form-control" id="coverImageUrl" name="coverImageUrl" placeholder="Необязательно">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="fas fa-book-medical mr-2"></i>Добавить книгу
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Список книг -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><i class="fas fa-books text-muted mr-2"></i>Ваши книги</h4>
+      </div>
+
+      <div th:if="${books.isEmpty()}" class="empty-state">
+        <i class="fas fa-book-open"></i>
+        <h4 class="mt-3">Ваша книжная полка пуста</h4>
+        <p class="text-muted">Добавьте свою первую книгу, используя форму выше</p>
+      </div>
+
+      <div th:each="book : ${books}" class="book-card">
+        <div class="row">
+          <div class="col-md-2 text-center">
+            <img th:if="${book.coverImageUrl}" th:src="${book.coverImageUrl}" alt="Обложка" class="book-cover">
+            <div th:unless="${book.coverImageUrl}" class="d-flex align-items-center justify-content-center" style="width:90px; height:120px; background:#f8f9fa; border-radius:4px;">
+              <i class="fas fa-book fa-3x text-muted"></i>
+            </div>
+          </div>
+          <div class="col-md-8">
+            <h5 class="mb-2" th:text="${book.title}"></h5>
+            <p class="text-muted mb-3" th:text="${'Автор: ' + book.author}"></p>
+            <div>
+              <span th:if="${book.isbn}" class="badge badge-info badge-custom mr-2" th:text="${'ISBN: ' + book.isbn}"></span>
+              <span th:if="${book.pageCount != null}" class="badge badge-light badge-custom" th:text="${book.pageCount + ' стр.'}"></span>
+            </div>
+          </div>
+          <div class="col-md-2 d-flex align-items-center justify-content-end">
+            <div class="action-buttons">
+              <form th:action="@{/books/markReadAsync}" method="post" class="mr-2">
+                <input type="hidden" name="id" th:value="${book.id}">
+                <input type="hidden" name="read" th:value="${!book.read}">
+                <button type="submit" class="btn btn-sm"
+                        th:class="${book.read ? 'btn-success' : 'btn-outline-secondary'}">
+                  <span th:text="${book.read ? 'Прочитано' : 'Не прочитано'}"></span>
+                </button>
+              </form>
+              <form th:action="@{/books/delete}" method="post">
+                <input type="hidden" name="id" th:value="${book.id}">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Правая колонка -->
+    <div class="col-lg-4">
+      <!-- Результаты поиска -->
+      <div th:if="${searchResults != null and !searchResults.isEmpty()}" class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-search mr-2"></i>Результаты поиска</h5>
+        </div>
+        <div class="card-body search-results">
+          <div th:each="book : ${searchResults}" class="mb-3 pb-3 border-bottom">
+            <div class="media">
+              <img th:if="${book.coverImageUrl}" th:src="${book.coverImageUrl}" alt="Обложка" class="mr-3" style="width:60px; height:90px; object-fit:cover; border-radius:4px;">
+              <div th:unless="${book.coverImageUrl}" class="mr-3 d-flex align-items-center justify-content-center" style="width:60px; height:90px; background:#f8f9fa; border-radius:4px;">
+                <i class="fas fa-book text-muted"></i>
+              </div>
+              <div class="media-body">
+                <h6 class="mt-0 mb-1" th:text="${book.title}"></h6>
+                <p class="text-muted small mb-2" th:text="${book.author}"></p>
+                <form th:action="@{/books/addFromSearch}" method="post">
+                  <input type="hidden" name="title" th:value="${book.title}">
+                  <input type="hidden" name="author" th:value="${book.author}">
+                  <input type="hidden" name="isbn" th:value="${book.isbn}">
+                  <input type="hidden" name="coverImageUrl" th:value="${book.coverImageUrl}">
+                  <input type="hidden" name="pageCount" th:value="${book.pageCount}">
+                  <button type="submit" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus mr-1"></i> Добавить
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Подсказки -->
+      <div class="card tips-card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-lightbulb mr-2"></i>Советы</h5>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li class="mb-3 d-flex">
+              <i class="fas fa-check-circle text-success mt-1 mr-2"></i>
+              <span>Используйте ISBN для точного поиска книг</span>
+            </li>
+            <li class="mb-3 d-flex">
+              <i class="fas fa-check-circle text-success mt-1 mr-2"></i>
+              <span>Отмечайте прочитанные книги для удобства учета</span>
+            </li>
+            <li class="d-flex">
+              <i class="fas fa-check-circle text-success mt-1 mr-2"></i>
+              <span>Добавляйте обложки для визуального оформления</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
